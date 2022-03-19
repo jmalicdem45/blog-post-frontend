@@ -5,7 +5,7 @@
             <div class="modal">
             <header class="modal-header">
                 <slot name="header">
-                Add comment
+                Add comment {{ comment ? `to ${ comment.comment }` : null }}
                 </slot>
                 <button
                 type="button"
@@ -24,7 +24,7 @@
                     </div>
                     <div class="comment">
                         <span class="comment-label">Comment</span>
-                        <textarea class="comment-content" v-model="comment"></textarea>
+                        <textarea class="comment-content" v-model="commentText"></textarea>
                     </div>
                 </slot>
             </section>
@@ -45,22 +45,61 @@
 </template>
 
 <script>
+import axios from 'axios';
+import API_URL from '../url.ts';
+import { useCommentStore } from '../stores/counter';
+
   export default {
     name: 'CreateCommentModal',
     data() {
         return {
             name: '',
-            comment: ''
+            commentText: ''
         };
     },
-    methods: {
-      close() {
-        this.$emit('close');
-      },
-      save() {
-          console.log(this.name, this.comment);
-      },
+    setup() {
+        const commentStore = useCommentStore();
+        const comment = commentStore.selectedComment;
+
+        function close() {
+            commentStore.closeModal();
+        }
+
+        function reloadComments() {
+            axios.get('comments', {
+                baseURL: API_URL,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }).then(data$ => {
+                const { data }  = data$;
+                commentStore.setComments(data);
+            });
+        }
+
+        function done() {
+            this.reloadComments();
+            this.close();
+        }
+
+        return { useCommentStore, close, comment, done, reloadComments };
     },
+    methods: {
+        save() {
+            const object = {
+              name: this.name,
+              comment: this.commentText,
+              parent_id: this.comment ? this.comment.id : null,
+            };
+            axios.post(`${API_URL}comments`, object, {
+                'Content-Type': 'application/json'
+            }).then(() => {
+                this.done();
+            }).catch(err => {
+                alert(err);
+            });
+        }
+    }
   };
 </script>
 

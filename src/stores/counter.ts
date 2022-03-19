@@ -1,16 +1,34 @@
 import { defineStore } from 'pinia'
 
-export const useCounterStore = defineStore({
-  id: 'counter',
-  state: () => ({
-    counter: 0
+interface State {
+  comments: any[];
+  selectedComment: any;
+  isModalOpen: boolean;
+}
+export const useCommentStore = defineStore('commentstore', {
+  state: (): State => ({
+    comments: [],
+    selectedComment: null,
+    isModalOpen: false,
   }),
-  getters: {
-    doubleCount: (state) => state.counter * 2
-  },
   actions: {
-    increment() {
-      this.counter++
-    }
-  }
-})
+    openModal() {
+      this.isModalOpen = true;
+    },
+    closeModal() {
+      this.isModalOpen = false;
+    },
+    getComments() {
+      return this.comments;
+    },
+    setComments(comments: any[]) {
+      this.$patch({
+        comments: comments,
+      });
+     this.comments = comments;
+    },
+    setSelectedComment(comment: any) {
+      this.selectedComment = comment;
+    },
+  },
+});
